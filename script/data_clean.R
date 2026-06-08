@@ -4,6 +4,7 @@ library(tidyverse)
 data5 <- import("data/processed/data5.rds")
 
 source("func/functions.R")
+source("script/define_variables.R")
 
 # 协变量转换 ####
 data6 <- data5 |>
@@ -14,7 +15,7 @@ data6 <- data5 |>
     Smoke = Smoke,
     Drink = Drink,
     Exercises = exercises,
-    Education = case_when(
+    Education_new = case_when(
       Education == 1 ~ 1,
       Education %in% c(2, 3) ~ 2,
       TRUE ~ 3
@@ -80,5 +81,118 @@ data6 <- data5 |>
     )
   )
 
-# 
 
+
+
+
+# 变量因子化 ####
+data6 <- data6 |>
+  mutate(across(
+    .cols = all_of(c("Age", "BMI", "diet_score", "liverhard", "fat_decay", "eGFR")), # 选择列
+    .fns = ~ as.numeric(.x) # 转换函数
+  ))
+data6 <- data6 |>
+  mutate(across(
+    .cols = all_of(c("Gender", "Smoke", "Drink", "Exercises", "Education_new", "Hypertension_new", "Hyperlipidemia_new", "Diabetes_new", "liverhard_degree", "fat_decay_degree", "ID")), # 选择列
+    .fns = ~ as.factor(.x) # 转换函数
+  ))
+
+# 多重插补 ####
+library(mice)
+source("func/functions.R")
+df <- as.data.frame(data6[, covariates])
+imputed_data <- mice(df, m = 10, seed = 123)
+
+
+completed_data_list <- map(1:10, ~ complete(imputed_data, .))
+
+Drink_table1 <- as.data.frame(completed_data_list[[1]]) |> dplyr::select(Drink)
+Drink_table2 <- as.data.frame(completed_data_list[[2]]) |> dplyr::select(Drink)
+Drink_table3 <- as.data.frame(completed_data_list[[3]]) |> dplyr::select(Drink)
+Drink_table4 <- as.data.frame(completed_data_list[[4]]) |> dplyr::select(Drink)
+Drink_table5 <- as.data.frame(completed_data_list[[5]]) |> dplyr::select(Drink)
+Drink_table6 <- as.data.frame(completed_data_list[[6]]) |> dplyr::select(Drink)
+Drink_table7 <- as.data.frame(completed_data_list[[7]]) |> dplyr::select(Drink)
+Drink_table8 <- as.data.frame(completed_data_list[[8]]) |> dplyr::select(Drink)
+Drink_table9 <- as.data.frame(completed_data_list[[9]]) |> dplyr::select(Drink)
+Drink_table10 <- as.data.frame(completed_data_list[[10]]) |> dplyr::select(Drink)
+
+drink_combined <- bind_cols(Drink_table1, Drink_table2, Drink_table3, Drink_table4, Drink_table5, Drink_table6, Drink_table7, Drink_table8, Drink_table9, Drink_table10)
+
+
+# 添加众数列
+drink_combined <- drink_combined %>%
+  rowwise() %>%
+  mutate(
+    Drink = get_mode(c_across(Drink...1:Drink...10))
+  ) %>%
+  ungroup()
+
+Exercises_table1 <- as.data.frame(completed_data_list[[1]]) |> dplyr::select(Exercises)
+Exercises_table2 <- as.data.frame(completed_data_list[[2]]) |> dplyr::select(Exercises)
+Exercises_table3 <- as.data.frame(completed_data_list[[3]]) |> dplyr::select(Exercises)
+Exercises_table4 <- as.data.frame(completed_data_list[[4]]) |> dplyr::select(Exercises)
+Exercises_table5 <- as.data.frame(completed_data_list[[5]]) |> dplyr::select(Exercises)
+Exercises_table6 <- as.data.frame(completed_data_list[[6]]) |> dplyr::select(Exercises)
+Exercises_table7 <- as.data.frame(completed_data_list[[7]]) |> dplyr::select(Exercises)
+Exercises_table8 <- as.data.frame(completed_data_list[[8]]) |> dplyr::select(Exercises)
+Exercises_table9 <- as.data.frame(completed_data_list[[9]]) |> dplyr::select(Exercises)
+Exercises_table10 <- as.data.frame(completed_data_list[[10]]) |> dplyr::select(Exercises)
+
+Exercises_combined <- bind_cols(Exercises_table1, Exercises_table2, Exercises_table3, Exercises_table4, Exercises_table5, Exercises_table6, Exercises_table7, Exercises_table8, Exercises_table9, Exercises_table10)
+
+# 添加众数列
+Exercises_combined <- Exercises_combined %>%
+  rowwise() %>%
+  mutate(
+    Exercises = get_mode(c_across(Exercises...1:Exercises...10))
+  ) %>%
+  ungroup()
+
+eGFR_table1 <- as.data.frame(completed_data_list[[1]]) |> dplyr::select(eGFR)
+eGFR_table2 <- as.data.frame(completed_data_list[[2]]) |> dplyr::select(eGFR)
+eGFR_table3 <- as.data.frame(completed_data_list[[3]]) |> dplyr::select(eGFR)
+eGFR_table4 <- as.data.frame(completed_data_list[[4]]) |> dplyr::select(eGFR)
+eGFR_table5 <- as.data.frame(completed_data_list[[5]]) |> dplyr::select(eGFR)
+eGFR_table6 <- as.data.frame(completed_data_list[[6]]) |> dplyr::select(eGFR)
+eGFR_table7 <- as.data.frame(completed_data_list[[7]]) |> dplyr::select(eGFR)
+eGFR_table8 <- as.data.frame(completed_data_list[[8]]) |> dplyr::select(eGFR)
+eGFR_table9 <- as.data.frame(completed_data_list[[9]]) |> dplyr::select(eGFR)
+eGFR_table10 <- as.data.frame(completed_data_list[[10]]) |> dplyr::select(eGFR)
+
+eGFR_combined <- bind_cols(eGFR_table1, eGFR_table2, eGFR_table3, eGFR_table4, eGFR_table5, eGFR_table6, eGFR_table7, eGFR_table8, eGFR_table9, eGFR_table10)
+eGFR_combined <- eGFR_combined %>%
+  mutate(
+    eGFR_mean = rowMeans(across(starts_with("eGFR...")), na.rm = TRUE)
+  )
+
+data6$Drink <- drink_combined$Drink
+data6$Exercises <- Exercises_combined$Exercises
+data6$eGFR <- eGFR_combined$eGFR_mean
+
+
+# 排除缺失 ####
+nrow(data6)
+data6 <- data6 |> filter(!is.na(liverhard))
+nrow(data6)
+summary(as.factor(data6$season.x))
+data6 <- data6 |> filter(!is.na(Mg))
+nrow(data6)
+data6 <- data6 |> filter(!is.na(M110T27))
+nrow(data6)
+
+
+# Fe,Cu 用1/2的最小值替代 ####
+Fe_min <- min(data6$Fe, na.rm = T)
+Cu_min <- min(data6$Cu, na.rm = T)
+
+data6$Fe <- ifelse(is.na(data6$Fe), Fe_min / 2, data6$Fe)
+data6$Cu <- ifelse(is.na(data6$Cu), Cu_min / 2, data6$Cu)
+
+sum(is.na(data6$Cu))
+
+
+
+
+# 输出 ####
+export(data6, file = "data/processed/data6.rds")
